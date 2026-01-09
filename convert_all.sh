@@ -3,7 +3,7 @@
 # this script converts all (nested) .flac files from /input to opus files in /output
 INPUT_DIR="/input"
 OUTPUT_DIR="/output"
-BITRATE=224
+BITRATE=256
 
 FILE_COUNT=$(find "$INPUT_DIR" -type f -size +100k -name "*.flac" | wc -l)
 echo "Found $FILE_COUNT FLAC files to convert."
@@ -43,5 +43,51 @@ find "$INPUT_DIR" -type f -size +100k -name "*.flac" | while read -r FLAC_FILE; 
     opusenc --no-phase-inv --downmix-stereo --bitrate "$BITRATE" "$FLAC_FILE" "$OUTPUT_FILE"
 done
 
+# now create playlists for all the opus files in the OUTPUT_DIR/Music/Playlists
+
+mkdir -p "$OUTPUT_DIR/Playlists"
+PLAYLIST_DIR="$OUTPUT_DIR/Music/Playlists"
+
+# iterate through all the directories in OUTPUT_DIR/Music/Playlists
+find "$PLAYLIST_DIR" -type d | while read -r DIR; do
+    PLAYLIST_NAME="$(basename "$DIR").m3u"
+    PLAYLIST_PATH="$OUTPUT_DIR/Playlists/$PLAYLIST_NAME"
+    echo "Re-creating playlist '$PLAYLIST_PATH'"
+    # delete the file if exists and re-create it
+    echo rm -f "$PLAYLIST_PATH"
+    touch "$PLAYLIST_PATH"
+    # find all opus files in the directory and add them to the playlist
+    find "$DIR" -type f -name "*.opus" | while read -r OPUS_FILE; do
+        # strip "$OUTPUT_DIR" from the beginning of the path
+        OPUS_FILE="${OPUS_FILE#$OUTPUT_DIR/}"
+        echo "../$OPUS_FILE" >> "$PLAYLIST_PATH"
+        echo "../$OPUS_FILE"
+    done
+    echo "\n"
+done
+
+# do the same, but in the Music directory itself
+
+
+mkdir -p "$OUTPUT_DIR/Music/m3us"
+PLAYLIST_DIR="$OUTPUT_DIR/Music/Playlists"
+
+# iterate through all the directories in OUTPUT_DIR/Music/Playlists
+find "$PLAYLIST_DIR" -type d | while read -r DIR; do
+    PLAYLIST_NAME="$(basename "$DIR").m3u"
+    PLAYLIST_PATH="$OUTPUT_DIR/Music/m3us/$PLAYLIST_NAME"
+    echo "Re-creating playlist '$PLAYLIST_PATH'"
+    # delete the file if exists and re-create it
+    echo rm -f "$PLAYLIST_PATH"
+    touch "$PLAYLIST_PATH"
+    # find all opus files in the directory and add them to the playlist
+    find "$DIR" -type f -name "*.opus" | while read -r OPUS_FILE; do
+        # strip "$OUTPUT_DIR/Music" from the beginning of the path
+        OPUS_FILE="${OPUS_FILE#$OUTPUT_DIR/Music/}"
+        echo "../$OPUS_FILE" >> "$PLAYLIST_PATH"
+        echo "../$OPUS_FILE"
+    done
+    echo "\n"
+done
 
 echo "we're out"
