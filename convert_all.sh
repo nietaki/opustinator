@@ -43,6 +43,16 @@ find "$INPUT_DIR" -type f -size +100k -name "*.flac" | while read -r FLAC_FILE; 
     opusenc --no-phase-inv --downmix-stereo --bitrate "$BITRATE" "$FLAC_FILE" "$OUTPUT_FILE"
 done
 
+# copy all .jpg files from INPUT_DIR to OUTPUT_DIR preserving the directory structure
+find "$INPUT_DIR" -type f -name "*.jpg" | while read -r JPG_FILE; do
+    RELATIVE_PATH="${JPG_FILE#$INPUT_DIR/}"
+    OUTPUT_FILE="$OUTPUT_DIR/$RELATIVE_PATH"
+    OUTPUT_SUBDIR="$(dirname "$OUTPUT_FILE")"
+    mkdir -p "$OUTPUT_SUBDIR"
+    echo "Copying cover art '$JPG_FILE'"
+    cp "$JPG_FILE" "$OUTPUT_FILE"
+done
+
 # now create playlists for all the opus files in the OUTPUT_DIR/Music/Playlists
 
 mkdir -p "$OUTPUT_DIR/Playlists"
@@ -54,7 +64,7 @@ find "$PLAYLIST_DIR" -type d | while read -r DIR; do
     PLAYLIST_PATH="$OUTPUT_DIR/Playlists/$PLAYLIST_NAME"
     echo "Re-creating playlist '$PLAYLIST_PATH'"
     # delete the file if exists and re-create it
-    echo rm -f "$PLAYLIST_PATH"
+    rm -f "$PLAYLIST_PATH"
     touch "$PLAYLIST_PATH"
     # find all opus files in the directory and add them to the playlist
     find "$DIR" -type f -name "*.opus" | while read -r OPUS_FILE; do
@@ -78,7 +88,7 @@ find "$PLAYLIST_DIR" -type d | while read -r DIR; do
     PLAYLIST_PATH="$OUTPUT_DIR/Music/m3us/$PLAYLIST_NAME"
     echo "Re-creating playlist '$PLAYLIST_PATH'"
     # delete the file if exists and re-create it
-    echo rm -f "$PLAYLIST_PATH"
+    rm -f "$PLAYLIST_PATH"
     touch "$PLAYLIST_PATH"
     # find all opus files in the directory and add them to the playlist
     find "$DIR" -type f -name "*.opus" | while read -r OPUS_FILE; do
